@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>org.springframework</groupId>
+    <artifactId>%APP_NAME%</artifactId>
+    <version>0.0.1</version>
+
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>2.1.6.RELEASE</version>
+    </parent>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+    </dependencies>
+
+    <properties>
+        <java.version>1.8</java.version>
+    </properties>
+
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>com.fortify.ps.maven.plugin</groupId>
+                <artifactId>sca-maven-plugin</artifactId>
+                <configuration>
+                    <buildId>%APP_NAME%-sca</buildId>
+                    <verbose>false</verbose>
+                    <debug>false</debug>
+                    <resultsFile>./%APP_NAME%-sca-results.fpr</resultsFile>
+                    <failOnSCAError>true</failOnSCAError>
+                    <renderSources>true</renderSources>
+                    <logfile>./scanlog.txt</logfile>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+	
+	<!-- Environment Settings -->
+    <scm>
+        <connection>scm:git:ssh://git@%SOURCE_URL%:7999/%REPO_PRJCT%/%REPO_SLUG%.git</connection>
+        <url>scm:git:ssh://git@%SOURCE_URL%:7999/%REPO_PRJCT%/%REPO_SLUG%.git</url>
+        <developerConnection>scm:git:ssh://git@%SOURCE_URL%:7999/%REPO_PRJCT%/%REPO_SLUG%.git</developerConnection>
+        <tag>HEAD</tag>
+    </scm>
+
+</project>

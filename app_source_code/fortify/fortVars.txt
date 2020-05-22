@@ -1,0 +1,4 @@
+fortBuildID: %APP_NAME%-sca
+fortArtifactId: %APP_NAME%
+planFortifyFPR: %APP_NAME%-sca-results.fpr
+planFortifyID: 00000

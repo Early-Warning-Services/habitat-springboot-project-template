@@ -1,0 +1,126 @@
+---
+version: 2
+# Plan Meta
+plan:
+  project-key: %PROJECT_KEY%
+  key: CB%REPO_KEY%
+  name: %CB_REPO_SLUG%
+# List of plan's stages
+stages:
+  - Converge Cookbook Stage:
+    - Converge
+# Job Definition
+Converge:
+  tasks:
+    - clean
+    - script: |
+        #!/bin/sh
+        # ugly, but it extracts the version number from inside single quotes 
+        # starting with "version"
+        # solution borrowed from here: 
+        # http://stackoverflow.com/questions/17291682/extract-string-between-single-quotes-with-sed
+        cookbook_version=$(sed -nr "s/.*version '([^']*)'.*/\1/p" metadata.rb)
+        echo $cookbook_version
+        # do the same thing, but extract the cookbook name.
+        cookbook_name=$(sed -nr "s/.*name '([^']*)'.*/\1/p" metadata.rb)
+        echo $cookbook_name
+        # create cookbook.properties file
+        prop="cookbook_name=$cookbook_name\ncookbook_version=$cookbook_version"
+        printf "$prop" > cookbook.properties
+        # print cookbook.properties
+        echo "printing cookbook.properties contents"
+        cat cookbook.properties
+    - inject-variables: 
+        file: cookbook.properties
+        scope: RESULT    
+    - script: |
+        #!/bin/sh
+        set -e
+        # Run Food Critic
+        echo
+        echo "Running foodcritic"
+        echo
+        chef exec foodcritic .
+        # Test for successful foodcritic run
+        if [ $? -ne 0 ]; then
+          echo "Foodcritic exited with a failed status"
+          exit 1;
+        else 
+          echo "Foodcritic exited with a successful run"
+          echo
+        fi
+        # Run Kitchen Test
+        export KITCHEN_YAML=".kitchen.dokken.yml"
+        echo
+        echo "Running kitchen test"
+        echo
+        export KITCHEN_YAML=.kitchen.dokken.yml
+        chef exec kitchen test --log-level=error --concurrency=1 --destroy=always
+        # Test for successful kitchen test run
+        if [ $? -ne 0 ]; then
+          echo "Kitchen exited with a failed status"
+          exit 1;
+        else 
+          echo "Kitchen exited with a successful run"
+          echo
+        fi
+        # Clone for push to Supermarket
+        echo
+        echo "Cloning repo to push to Supermarket"
+        echo
+        git clone -b $bamboo_planRepository_1_branch --single-branch %FROMCBSOURCE%
+        # Test for successful git clone run
+        if [ $? -ne 0 ]; then
+          echo "Git exited with a failed status"
+          exit 1;
+        else 
+          echo "Git exited with a successful run"
+          echo
+        fi
+        # Share to supermarket if branch is master
+        echo
+        echo "Sharing cookbook to Supermarket"
+        echo
+        if [ "$bamboo_planRepository_1_branch" = "master" ]; then
+          echo "Master branch detected, sharing cookbook to supermarket"; 
+          knife supermarket share $bamboo_inject_cookbook_name --cookbook-path .;
+          # Test for successful knife share run
+          if [ $? -ne 0 ]; then
+            echo "Knife exited with a failed status"
+            exit 1;
+          else 
+            echo "Knife exited with a successful run"
+            echo
+          fi
+          echo
+        else 
+          echo "Cookbook is built in a non-master branch and will not be shared to supermarket";
+          echo
+        fi
+        exit 0
+    - clean
+  requirements:
+    - Dokken
+---
+version: 2
+plan: %PROJECT_KEY%-CB%REPO_KEY%
+# Plan permissions   
+plan-permissions:
+  - groups: 
+      - bamboo-admin
+    permissions:
+      - view
+      - edit
+      - build
+      - clone
+      - admin
+  - groups: 
+      - BambooEngineer
+      - BambooSrEngineer
+    permissions:
+      - view
+      - build
+  - roles: 
+      - logged-in
+    permissions: 
+      - view

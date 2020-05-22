@@ -1,0 +1,11 @@
+# Use this file to templatize your application's native configuration files.
+# See the docs at https://www.habitat.sh/docs/create-packages-configure/.
+# You can safely delete this file if you don't need it.
+
+# Set the default port app runs on
+[server]
+port = "8080"
+
+# Set the default Java options to run the app with
+[app]
+javaopts = "-Xmx1024m"

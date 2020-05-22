@@ -1,0 +1,12 @@
+#!/bin/sh
+ 
+# redirect stderr to journalctl
+exec 2>&1
+
+# export the options
+export JAVA_HOME="{{pkgPathFor "core/jre8"}}"
+export JAVA_OPTS="{{cfg.app.javaopts}}"
+
+# execute command
+exec java -jar {{pkg.path}}/{{pkg.name}}-{{pkg.version}}.jar
+

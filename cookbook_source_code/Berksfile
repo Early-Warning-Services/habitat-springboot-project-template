@@ -1,0 +1,9 @@
+source '%SUPERMARKET%'
+
+metadata
+
+group :integration do
+  cookbook 'habitat_test',
+           path: 'test/integration/fixtures/cookbooks/' \
+           'habitat_test'
+end

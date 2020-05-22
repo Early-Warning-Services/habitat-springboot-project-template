@@ -1,0 +1,13 @@
+{
+    "fields": {
+       "project":
+       {
+          "key": "%ISSUE_PROJECT%"
+       },
+       "summary": "Connect New Bitbucket Source to Bamboo",
+       "description": "New source code in Bitbucket Datacenter needs to be connected to Bamboo.\n\nThe new source code repos include bamboo-specs.\n\nPlease connect:\n* %APPSOURCE%\n* %CBSOURCE%\n\nPlease ensure the policyfile policy_ews_%APP_NAME%.rb has deployed to the Chef server for policy group Dev.\n\n\nThis was created by %BUILD_RESULTS_URL%.",
+       "issuetype": {
+          "name": "Task"
+       }
+   }
+}

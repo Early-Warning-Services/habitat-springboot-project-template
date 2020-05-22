@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 http://maven.apache.org/xsd/settings-1.0.0.xsd">
+ <localRepository>/opt/atlassian/Development/Tools/Iterations/maven-3.3.9_repo</localRepository>
+ <servers>
+        <server>
+            <id>central</id>
+            <username>deployment</username>
+            <password>deployment</password>
+        </server>
+        <server>
+            <id>snapshots</id>
+            <username>deployment</username>
+            <password>deployment</password>
+        </server>
+        <server>
+            <id>releases</id>
+            <username>deployment</username>
+            <password>deployment</password>
+        </server>
+    </servers>
+    <pluginGroups>
+        <pluginGroup>com.atlassian.maven.plugins</pluginGroup>
+    </pluginGroups>
+    <profiles>
+        <profile>
+
+             <repositories>
+               <repository>
+                 <snapshots>
+                   <enabled>false</enabled>
+                 </snapshots>
+                 <id>central</id>
+                 <name>libs-release</name>
+				 <!-- MAVEN_URL is a global variable from Bamboo for the Maven repo to utilize -->
+                 <url>%MAVEN_URL%</url>
+               </repository>
+               <repository>
+                 <snapshots>
+                   <enabled>false</enabled>
+                 </snapshots>
+                 <id>releases</id>
+                 <name>libs-release</name>
+                 <url>%MAVEN_URL%</url>
+               </repository>
+               <repository>
+                 <snapshots />
+                 <id>snapshots</id>
+                 <name>libs-snapshot</name>
+                 <url>%MAVEN_URL%</url>
+               </repository>
+             </repositories>
+             <pluginRepositories>
+              <pluginRepository>
+                 <snapshots>
+                   <enabled>false</enabled>
+                 </snapshots>
+                 <id>central</id>
+                 <name>plugins-release</name>
+                 <url>%MAVEN_URL%</url>
+              </pluginRepository>
+              <pluginRepository>
+                 <snapshots />
+                 <id>snapshots</id>
+                 <name>plugins-snapshot</name>
+                 <url>%MAVEN_URL%</url>
+              </pluginRepository>
+            </pluginRepositories>
+            <id>artifactory</id>
+        </profile>
+    </profiles>
+    <activeProfiles>
+        <activeProfile>artifactory</activeProfile>
+    </activeProfiles>
+  <mirrors>
+    <mirror>
+      <id>internal-repository</id>
+      <name>Maven Repository Manager running on repo.mycompany.com</name>
+      <url>%MAVEN_URL%</url>
+      <mirrorOf>*</mirrorOf>
+    </mirror>
+  </mirrors>
+</settings>

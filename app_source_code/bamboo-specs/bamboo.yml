@@ -1,0 +1,225 @@
+---
+version: 2
+# Plan Meta
+plan:
+  # PROJECT_KEY, REPO_KEY, REPO_SLUG are variables that are supplied at build run time in Bamboo by running the plan customized
+  project-key: %PROJECT_KEY%
+  key: %REPO_KEY%
+  name: %REPO_SLUG%
+# List of plan's stages
+stages:
+  - Habitat Studio Build Stage:
+      - Build
+  - Fortify SCA Stage:
+      - SCA
+# Job Definition
+Build:
+  tasks:
+    - clean
+    - script: |
+        #!/bin/sh
+        set -e
+        echo
+        echo "Copying required files"
+        echo
+        # Create Keystore using our local Hashicorp Vault instance.
+        # VAULT_ADDR is a global variable in Bamboo
+        export VAULT_ADDR=%VAULT_ADDR%
+        # APP_NAME is supplied in Bamboo at build run time
+        vault write /pki/issue/bamboo_agent_habitat common_name=%APP_NAME%.int alt_names=%APP_NAME%-dev.int,%APP_NAME%-qa.int,%APP_NAME%-uat.int,%APP_NAME%-cat.int ttl=17520h -format=json >%APP_NAME%.int.json
+        jq .data.certificate -r < %APP_NAME%.int.json > cert.pem
+        jq .data.ca_chain -r < %APP_NAME%.int.json > ca_chain.pem
+        jq .data.issuing_ca -r < %APP_NAME%.int.json > ca.pem
+        jq .data.private_key -r < %APP_NAME%.int.json > key.pem
+        sed -i 's/\\n/\n/g' ca_chain.pem
+        sed -i 's/  "//g' ca_chain.pem
+        sed -i 's/",//g' ca_chain.pem
+        sed -i 's/"//g' ca_chain.pem
+        cat ca_chain.pem cert.pem key.pem > combined.pem
+        # bamboo.jksPassword is global variable in Bamboo that can be overridden at build run time
+        openssl pkcs12 -export -out combined.p12 -in combined.pem -passout pass:${bamboo.jksPassword} -passin  pass:
+        keytool -importkeystore -srckeystore combined.p12 -srcstoretype pkcs12 -destkeystore %APP_NAME%.int.jks --srcstorepass ${bamboo.jksPassword} -deststorepass ${bamboo.jksPassword} -noprompt
+        keytool -import -v -trustcacerts -alias root -file ca.pem -keystore %APP_NAME%.int.jks -keypass ${bamboo.jksPassword} -storepass ${bamboo.jksPassword} -noprompt
+        rm -f ca_chain.pem ca.pem cert.pem combined.pem %APP_NAME%.int.json key.pem combined.p12
+        # Get certs and set environment variables
+        mkdir -p ./certs
+        # HAB_JSSE_URL and HAB_SSL_CERT_URL are global variables in Bamboo that have the download location for these certs
+        curl -k %HAB_JSSE_URL% -o ./certs/jssecacerts
+        curl -k %HAB_SSL_CERT_URL% -o ./certs/ssl-certificate.crt
+        export SSL_CERT_FILE=./certs/ssl-certificate.crt
+        # HAB_BLDR_URL is a gloabl variable in Bamboo for the location of our on-prem Builder
+        export HAB_BLDR_URL=%HAB_BLDR_URL%
+        export HAB_ORIGIN=%PKG_ORIGIN%
+        # Run Habitat Build
+        echo "Starting hab studio run build"
+        echo
+        hab studio run build
+        # Test for successful hab studio run
+        if [ $? -ne 0 ]; then
+          echo $1
+          echo "Habitat Studio exited with a failed status"
+          exit 1;
+        else
+          echo "Habitat Studio exited with a successful run"
+          echo
+        fi
+        # Begin package upload
+        echo
+        echo "Begin upload of hart file"
+        echo
+        hartFile=$(ls ./results/ | grep hart)
+        hartPath=$(pwd)/results/$hartFile
+        hab pkg upload $hartPath -z $bamboo_hab_access_token > output.txt
+        # Test for successful hab pkg run
+        if [ $? -ne 0 ]; then
+          echo "Hart upload exited with a failed status"
+          exit 1;
+        else 
+          echo "Hart upload exited with a successful run"
+          echo
+        fi
+        # View upload output
+        echo
+        echo "Hart upload output."
+        echo "-------------------"
+        echo
+        cat output.txt
+        # Get hab pkg value
+        echo "Get the habPkg variable"
+        grep Uploaded output.txt | sed 's/^.* * //' > new.txt
+        value=$(cat new.txt)
+        # Get other variables needed for docker
+        org=$(echo $value| cut -d/ -f 1)
+        app=$(echo $value| cut -d/ -f 2)
+        ver=$(echo $value| cut -d/ -f 3)
+        rel=$(echo $value| cut -d/ -f 4)
+        # Store variable in result file to be read in
+        echo "habPkg: $value" > result.txt
+        echo "hartFile: $hartFile" >> result.txt
+        echo "hartPath: $hartPath" >> result.txt
+        echo "org: $org" >> result.txt
+        echo "app: $app" >> result.txt
+        echo "ver: $ver" >> result.txt
+        echo "rel: $rel" >> result.txt
+        echo
+        cat result.txt
+        echo
+        exit 0
+    - inject-variables: 
+        file: result.txt
+        scope: RESULT    
+    - script: |
+        #!/bin/sh
+        set -e
+        # Check result value
+        echo
+        echo "The built hart file is " $bamboo_inject_habPkg
+        echo
+        exit 0
+    - clean
+  requirements:
+    - habitat
+
+SCA:
+  tasks:
+    - clean
+    - inject-variables: 
+        file: ./fortify/fortVars.txt
+        scope: RESULT
+        namespace: fort
+    - script: |
+        # Source Fortify Shell script
+        . ./fortify/fortifySCA.sh
+  requirements:
+    - fortify_agent
+  artifacts:
+    -
+      name: %APP_NAME%-sca-results.fpr
+      location: target/fortify
+      pattern: '**/*.fpr'
+      required: true
+---
+version: 2
+# Plan Meta
+plan: %PROJECT_KEY%-%REPO_KEY%
+# Plan permissions
+plan-permissions:
+  - groups: 
+      - bamboo-admin
+    permissions:
+      - view
+      - edit
+      - build
+      - clone
+      - admin
+  - groups: 
+      - BambooEngineer
+      - BambooSrEngineer
+    permissions:
+      - view
+      - build
+  - roles: 
+      - logged-in
+    permissions: 
+      - view
+---
+version: 2
+deployment:
+  name: Promote %REPO_SLUG%
+  source-plan: %PROJECT_KEY%-%REPO_KEY%
+
+release-naming:
+  next-version-name: 0.0.1-${bamboo.buildNumber}
+
+environments:
+  - QA
+
+QA:
+  tasks:
+    - clean
+    - script: |
+        #!/bin/sh
+        set -e 
+        # Export environment variables
+        export SSL_CERT_FILE=/src/ssl-certificate.crt
+        export HAB_BLDR_URL=%HAB_BLDR_URL%
+        # Promote package
+        echo
+        echo "Starting promotion"
+        echo
+        hab pkg promote -z $bamboo_hab_access_token -u %HAB_BLDR_URL% $bamboo_inject_habPkg qa
+        # Test for successful hab pkg run
+        if [ $? -ne 0 ]; then
+          echo "Habitat Pkg Promotion exited with a failed status"
+          exit 1;
+        else 
+          echo "Habitat Pkg Promotion exited with a successful run"
+          echo
+        fi
+        exit 0
+    - clean
+  requirements:
+    - habitat
+---
+version: 2
+deployment: Promote %REPO_SLUG%
+# These permissions apply to the deployment project
+deployment-permissions:
+  - roles: logged-in
+    permissions:
+      - view
+
+# These permissions apply to all environments defined in this deployment project
+default-environment-permissions: 
+  - groups:
+      - bamboo-admin
+    permissions:
+      - view
+      - edit
+      - deploy
+  - groups:
+      - BambooEngineer
+      - BambooSrEngineer
+    permissions:
+      - view
+      - deploy
