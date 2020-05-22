@@ -17,7 +17,7 @@ Gaps in the automation should be covered by automated creation of tickets in JIR
 * Generates a new JIRA ticket in the Support Project for the connection the new repos with Bamboo. (This is a gap in the automation as Bamboo API does not support automating this currently.)
 
 ## How to use?
-* Configure you Bamboo instance with the following Global or Plan Variables:
+* Configure your Bamboo instance with the following Global or Plan Variables:
    #### These Plan variables are the information we need the CI job executor to supply at run time
    * `appName` - The name of the application we are going to be creating
    * `repoPrjct` - The Bitbucket Project Key where the new repos will be generated
