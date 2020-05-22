@@ -12,7 +12,7 @@ Gaps in the automation should be covered by automated creation of tickets in JIR
 * Creates Bitbucket repo for Springboot application in a Bitbucket project specified by the executor.
 * Populates app repo with small sample springboot app and habitat configurations. Includes Bamboo spec for new build plan and deployment plan.
 * Creates Bitbucket repo for a cookbook for the application in the Bitbucket project specified by the executor. The cookbook depends on the [Habitat cookbook](https://github.com/chef-cookbooks/habitat).
-* Populates the cookbook repo with a new cookbook for the app.  Includes Bamboo spec for new build plan. Depends on [Kitchen Dokken] (https://github.com/test-kitchen/kitchen-dokken) for running Test Kitchen.
+* Populates the cookbook repo with a new cookbook for the app.  Includes Bamboo spec for new build plan. Depends on [Kitchen Dokken](https://github.com/test-kitchen/kitchen-dokken) for running Test Kitchen.
 * Creates an policyfile that includes the generated cookbook and commits that to a Chef Policyfile repo specified in the CI. 
 * Generates a new JIRA ticket in the Support Project for the connection the new repos with Bamboo. (This is a gap in the automation as Bamboo API does not support automating this currently.)
 
