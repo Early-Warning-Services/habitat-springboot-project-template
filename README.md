@@ -67,7 +67,7 @@ Gaps in the automation should be covered by automated creation of tickets in JIR
    * appName - This is the name of the new application.  It will be embedded into many of the configuration files and the artifact name.
    * buildPlanKey - This is a unique key identifier for the bamboo plans.  It can be upto 6 characters long and only contain [A-Z] and [0-9].  
    * jiraProjectKey - This is the project key in JIRA where issues may be logged for this project (i.e. CM, ASV, PEG).  These are the letters in front of the issue id (i.e. CM-9999, ASV-9999, PEG-9999).  You can see them in the key column at !missing_URL.
-   * repoPrjct - This is the Bitbucket Project key where the application source code should be put (i.e. AUT, CPT, CEC).  You can see them in the key column at !missing_URL.
+   * repoPrjct - This is the Bitbucket Project key where the application source code should be put (i.e. AUT, CPT, CEC).  You can see them in the key column on the Bitbucket project page.
    * userEmail - This is the email of the primary maintainer.  May be a individual ews email or a group ews email account.
    * userName - This is the name of the primary maintainer.  May be an individual or a team.  
 ![alternativetext](images/buildvariables.png)
